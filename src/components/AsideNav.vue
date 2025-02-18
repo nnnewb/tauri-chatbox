@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject, ref } from "vue";
-import NavButton from "./components/NavButton.vue";
+import NavButton from "./NavButton.vue";
 
 const chat = inject("chat", ref<string[]>([]));
 

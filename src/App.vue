@@ -2,7 +2,7 @@
 import { ref, provide } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { RouterView } from "vue-router";
-import AsideNav from "./AsideNav.vue";
+import AsideNav from "./components/AsideNav.vue";
 
 const greetMsg = ref("");
 const name = ref("");

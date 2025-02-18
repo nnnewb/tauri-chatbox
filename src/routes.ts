@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import WelcomePage from './WelcomePage.vue'
-import ChatPage from './ChatPage.vue'
-import SettingPage from './SettingPage.vue'
+import WelcomePage from './components/WelcomePage.vue'
+import ChatPage from './components/ChatPage.vue'
+import SettingPage from './components/SettingPage.vue'
 
 const routes = [
   {
