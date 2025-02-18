@@ -9,16 +9,18 @@ defineProps({
   },
   to: {
     type: String,
-    required: true,
+    default: null,
   },
 });
 </script>
 
 <template>
-  <router-link :to="to" class="nav-button" :class="{ active: active }">
+  <router-link v-if="to" :to="to" class="nav-button" :class="{ active: active }">
     <slot>Default Button</slot>
-    <!-- 使用默认插槽 -->
   </router-link>
+  <button v-else class="nav-button" :class="{ active: active }">
+    <slot>Default Button</slot>
+  </button>
 </template>
 
 <style scoped>
