@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { useRoute } from 'vue-router'
+import { useRoute, onBeforeRouteUpdate } from 'vue-router'
+import { ref } from 'vue'
+
 const route = useRoute()
-const chatId = route.params.id
+const chatId = ref(route.params.id)
+
+onBeforeRouteUpdate((to) => {
+  chatId.value = to.params.id
+})
 </script>
 
 <template>
