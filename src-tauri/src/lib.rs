@@ -20,7 +20,8 @@ pub fn run() {
             add_message,
             delete_message,
             get_all_messages,
-            get_session
+            get_session,
+            clear_messages // 注册新的命令
         ])
         .manage(app_state)
         .run(tauri::generate_context!())
@@ -123,5 +124,16 @@ fn add_message(
         .lock()
         .unwrap()
         .add_message(session_id, role, text, attachment_path)
+        .map_err(|err| err.to_string())
+}
+
+// 新增命令：清空会话消息
+#[tauri::command]
+fn clear_messages(state: tauri::State<AppState>, session_id: i32) -> Result<(), String> {
+    state
+        .db
+        .lock()
+        .unwrap()
+        .clear_messages(session_id)
         .map_err(|err| err.to_string())
 }

@@ -151,6 +151,16 @@ impl Database {
         Ok(messages)
     }
 
+    // 新增方法：清空会话消息
+    pub fn clear_messages(&mut self, session_id: i32) -> Result<(), Error> {
+        let tx = self.conn.transaction()?;
+        tx.execute("DELETE FROM messages WHERE session_id=?", [session_id])?;
+        tx.execute("DELETE FROM message_texts WHERE message_id IN (SELECT id FROM messages WHERE session_id=?)", [session_id])?;
+        tx.execute("DELETE FROM message_attachments WHERE message_id IN (SELECT id FROM messages WHERE session_id=?)", [session_id])?;
+        tx.commit()?;
+        Ok(())
+    }
+
     fn init_database(conn: &Connection) -> Result<(), Error> {
         // conn.execute("DROP TABLE  sessions;", [])?;
         // conn.execute("DROP TABLE messages;", [])?;

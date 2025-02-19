@@ -36,21 +36,49 @@ export class Session {
     return await invoke<Message>("add_message", { sessionId: this.id, role, text, attachmentPath: attachment_path });
   }
 
-  public static async create_session(name: string): Promise<Session> {
+  /**
+   * 清空当前会话的所有消息
+   */
+  public async clear_messages(): Promise<void> {
+    return await invoke<void>("clear_messages", { sessionId: this.id });
+  }
+}
+
+export class SessionRepository {
+  private static instance: SessionRepository;
+
+  private constructor() {}
+
+  public static getInstance(): SessionRepository {
+    if (!SessionRepository.instance) {
+      SessionRepository.instance = new SessionRepository();
+    }
+    return SessionRepository.instance;
+  }
+
+  public async create_session(name: string): Promise<Session> {
     const sessionData = await invoke<Session>("create_session", { name });
     return new Session(sessionData.id, sessionData.name);
   }
 
-  public static async get_all_sessions(): Promise<Session[]> {
+  public async get_all_sessions(): Promise<Session[]> {
     const sessionDataList = await invoke<Session[]>("get_all_sessions");
     return sessionDataList.map((sessionData) => new Session(sessionData.id, sessionData.name));
   }
 
-  public static async get_session(id: number): Promise<Session> {
+  public async get_session(id: number): Promise<Session> {
     const sessionData = await invoke<Session | null>("get_session", { id });
     if (sessionData === null) {
       throw new Error(`Session with id ${id} not found`);
     }
     return new Session(sessionData.id, sessionData.name);
+  }
+
+  public async delete_session(id: number): Promise<void> {
+    await invoke<void>("delete_session", { id });
+  }
+
+  public async update_session(id: number, name: string): Promise<void> {
+    await invoke<void>("update_session", { id, name });
   }
 }

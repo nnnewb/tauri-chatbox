@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { useRoute, onBeforeRouteUpdate } from "vue-router";
 import { ref, onMounted } from "vue";
-import { Session } from "../lib/session";
+import { Session, SessionRepository } from "../lib/session";
+import MyButton from "./MyButton.vue";
 
 const route = useRoute();
 const chatId = ref(route.params.id);
 const session = ref<Session | null>(null);
 const messages = ref<Message[]>([]);
 const messageInput = ref(""); // 用于存储输入框的内容
+
+const sessionRepository = SessionRepository.getInstance();
 
 onMounted(async () => {
   await fetchSession();
@@ -25,7 +28,7 @@ async function fetchSession() {
       console.log(`Invalid session ID: ${chatId.value}`);
       return;
     }
-    session.value = await Session.get_session(sessionId);
+    session.value = await sessionRepository.get_session(sessionId);
     if (session.value) {
       console.log(session.value);
       messages.value = await session.value.list_messages();
@@ -41,6 +44,13 @@ async function sendMessage() {
   }
 }
 
+async function clearMessages() {
+  if (session.value) {
+    await session.value.clear_messages();
+    messages.value = [];
+  }
+}
+
 function handleKeyPress(event: KeyboardEvent) {
   if (event.key === "Enter" && !event.shiftKey) {
     event.preventDefault(); // 阻止默认的换行行为
@@ -51,7 +61,7 @@ function handleKeyPress(event: KeyboardEvent) {
 
 <template>
   <div class="chat">
-    <h1>Chat {{ chatId }}</h1>
+    <h1>{{ session?.name }}</h1>
     <div class="chat-content">
       <div class="message-container">
         <div
@@ -72,7 +82,8 @@ function handleKeyPress(event: KeyboardEvent) {
       ></textarea>
     </div>
     <div class="chat-action">
-      <button class="send-button" @click="sendMessage">Send</button>
+      <my-button type="danger" @click="clearMessages">Clear Messages</my-button>
+      <my-button type="primary" @click="sendMessage">Send</my-button>
     </div>
   </div>
 </template>
@@ -109,20 +120,7 @@ function handleKeyPress(event: KeyboardEvent) {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-}
-
-.send-button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.send-button:hover {
-  background-color: #0056b3;
+  gap: 12px;
 }
 
 /* 消息气泡样式 */

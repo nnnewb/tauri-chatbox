@@ -2,22 +2,24 @@
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import NavButton from "./NavButton.vue";
-import { Session } from "../lib/session";
+import { SessionRepository } from "../lib/session";
 
 const route = useRoute();
 const router = useRouter();
 const sessions = ref<Session[]>([]);
+
+const sessionRepository = SessionRepository.getInstance();
 
 onMounted(async () => {
   await fetchSessions();
 });
 
 async function fetchSessions() {
-  sessions.value = await Session.get_all_sessions();
+  sessions.value = await sessionRepository.get_all_sessions();
 }
 
 const addChat = async () => {
-  const newSession = await Session.create_session("untitled");
+  const newSession = await sessionRepository.create_session("untitled");
   sessions.value.push(newSession);
   router.push(`/chat/${newSession.id}`);
 };
