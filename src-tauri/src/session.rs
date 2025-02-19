@@ -69,6 +69,17 @@ impl Database {
         Ok(sessions)
     }
 
+    pub fn get_session(&mut self, id: i32) -> Result<Session, Error> {
+        let mut stmt = self.conn.prepare("SELECT id, name FROM sessions WHERE id = ?")?;
+        let session = stmt.query_row([id], |row| {
+            Ok(Session {
+                id: row.get(0)?,
+                name: row.get(1)?,
+            })
+        })?;
+        Ok(session)
+    }
+
     pub fn add_message(
         &mut self,
         session_id: i32,

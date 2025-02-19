@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { defineProps } from "vue";
-
 // 接受 active prop 和 to prop
 defineProps({
   active: {

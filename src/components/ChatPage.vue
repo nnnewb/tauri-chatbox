@@ -1,36 +1,50 @@
 <script setup lang="ts">
 import { useRoute, onBeforeRouteUpdate } from "vue-router";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
+import { Session } from "../lib/session";
 
 const route = useRoute();
 const chatId = ref(route.params.id);
+const session = ref<Session | null>(null);
+const messages = ref<Message[]>([]);
 
-onBeforeRouteUpdate((to) => {
-  chatId.value = to.params.id;
+onMounted(async () => {
+  await fetchSession();
 });
+
+onBeforeRouteUpdate(async (to) => {
+  chatId.value = to.params.id;
+  await fetchSession();
+});
+
+async function fetchSession() {
+  if (chatId.value) {
+    const sessionId = parseInt(chatId.value as string, 10);
+    if (isNaN(sessionId)) {
+      console.log(`Invalid session ID: ${chatId.value}`);
+      return;
+    }
+    session.value = await Session.get_session(sessionId);
+    if (session.value) {
+      console.log(session.value);
+      messages.value = await session.value.list_messages();
+    }
+  }
+}
 </script>
 
 <template>
   <div class="chat">
     <h1>Chat {{ chatId }}</h1>
     <div class="chat-content">
-      <!-- 示例消息 -->
       <div class="message-container">
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message self">This is a message from me.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
-        <div class="message other">This is a message from the other user.</div>
+        <div
+          v-for="message in messages"
+          :key="message.id"
+          :class="['message', message.role === 'self' ? 'self' : 'other']"
+        >
+          {{ message.text }}
+        </div>
       </div>
     </div>
     <div class="chat-input-container">

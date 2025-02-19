@@ -1,14 +1,25 @@
 <script setup lang="ts">
-import { inject, ref } from "vue";
-import { useRoute } from "vue-router";
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import NavButton from "./NavButton.vue";
+import { Session } from "../lib/session";
 
-const chat = inject("chat", ref<string[]>([]));
 const route = useRoute();
+const router = useRouter();
+const sessions = ref<Session[]>([]);
 
-const addChat = () => {
-  const newChatId = `chat_${chat.value.length + 1}`;
-  chat.value.push(newChatId);
+onMounted(async () => {
+  await fetchSessions();
+});
+
+async function fetchSessions() {
+  sessions.value = await Session.get_all_sessions();
+}
+
+const addChat = async () => {
+  const newSession = await Session.create_session("untitled");
+  sessions.value.push(newSession);
+  router.push(`/chat/${newSession.id}`);
 };
 </script>
 
@@ -17,12 +28,12 @@ const addChat = () => {
     <div class="topdown">
       <nav-button @click="addChat">添加</nav-button>
       <nav-button
-        v-for="(chatId, index) in chat"
-        :key="index"
-        :to="`/chat/${chatId}`"
-        :active="route.params.id === chatId"
+        v-for="session in sessions"
+        :key="session.id"
+        :to="`/chat/${session.id}`"
+        :active="route.params.id === session.id.toString()"
       >
-        会话 {{ index + 1 }}
+        {{ session.name }}
       </nav-button>
     </div>
     <div class="bottomup">
