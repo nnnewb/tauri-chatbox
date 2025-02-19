@@ -3,6 +3,7 @@ mod session;
 use session::Database;
 use session::Message;
 use session::Session;
+use session::Config; // 新增 Config 导入
 use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -21,7 +22,10 @@ pub fn run() {
             delete_message,
             get_all_messages,
             get_session,
-            clear_messages // 注册新的命令
+            clear_messages,
+            get_config, // 注册新的命令
+            set_config, // 注册新的命令
+            delete_config // 注册新的命令
         ])
         .manage(app_state)
         .run(tauri::generate_context!())
@@ -135,5 +139,38 @@ fn clear_messages(state: tauri::State<AppState>, session_id: i32) -> Result<(), 
         .lock()
         .unwrap()
         .clear_messages(session_id)
+        .map_err(|err| err.to_string())
+}
+
+// 新增 get_config 命令
+#[tauri::command]
+fn get_config(state: tauri::State<AppState>, key: &str) -> Result<Option<String>, String> {
+    state
+        .db
+        .lock()
+        .unwrap()
+        .get_config(key)
+        .map_err(|err| err.to_string())
+}
+
+// 新增 set_config 命令
+#[tauri::command]
+fn set_config(state: tauri::State<AppState>, key: &str, value: &str) -> Result<(), String> {
+    state
+        .db
+        .lock()
+        .unwrap()
+        .set_config(key, value)
+        .map_err(|err| err.to_string())
+}
+
+// 新增 delete_config 命令
+#[tauri::command]
+fn delete_config(state: tauri::State<AppState>, key: &str) -> Result<(), String> {
+    state
+        .db
+        .lock()
+        .unwrap()
+        .delete_config(key)
         .map_err(|err| err.to_string())
 }

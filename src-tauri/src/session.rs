@@ -16,6 +16,12 @@ pub struct Message {
     pub attachment_path: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub key: String,
+    pub value: String,
+}
+
 pub struct Database {
     pub conn: Connection,
 }
@@ -161,9 +167,8 @@ impl Database {
         Ok(())
     }
 
+    // 新增 config 表的初始化逻辑
     fn init_database(conn: &Connection) -> Result<(), Error> {
-        // conn.execute("DROP TABLE  sessions;", [])?;
-        // conn.execute("DROP TABLE messages;", [])?;
         conn.execute(
             "CREATE TABLE IF NOT EXISTS sessions (
                  id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -204,6 +209,34 @@ impl Database {
             [],
         )?;
         conn.execute("CREATE INDEX IF NOT EXISTS message_attachments_message_idx ON message_attachments (message_id)", [])?;
+        
+        // 新增 config 表的创建逻辑
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS config (
+                 key TEXT PRIMARY KEY,
+                 value TEXT NOT NULL
+            )",
+            [],
+        )?;
+        Ok(())
+    }
+
+    // 新增 get_config 方法
+    pub fn get_config(&self, key: &str) -> Result<Option<String>, Error> {
+        let mut stmt = self.conn.prepare("SELECT value FROM config WHERE key = ?")?;
+        let value = stmt.query_row([key], |row| row.get(0))?;
+        Ok(value)
+    }
+
+    // 新增 set_config 方法
+    pub fn set_config(&mut self, key: &str, value: &str) -> Result<(), Error> {
+        self.conn.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", params![key, value])?;
+        Ok(())
+    }
+
+    // 新增 delete_config 方法
+    pub fn delete_config(&mut self, key: &str) -> Result<(), Error> {
+        self.conn.execute("DELETE FROM config WHERE key = ?", [key])?;
         Ok(())
     }
 }
