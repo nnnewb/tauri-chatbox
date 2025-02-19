@@ -8,14 +8,14 @@ export class Session {
    * 获取当前会话的所有消息
    */
   public async list_messages(): Promise<Message[]> {
-    return await invoke<Message[]>('get_all_messages', { sessionId: this.id });
+    return await invoke<Message[]>("get_all_messages", { sessionId: this.id });
   }
 
   /**
    * 删除当前会话
    */
   public async delete(): Promise<void> {
-    return await invoke<void>('delete_session', { id: this.id });
+    return await invoke<void>("delete_session", { id: this.id });
   }
 
   /**
@@ -23,7 +23,7 @@ export class Session {
    * @param newName 新的会话名称
    */
   public async update(newName: string): Promise<void> {
-    return await invoke<void>('update_session', { id: this.id, name: newName });
+    return await invoke<void>("update_session", { id: this.id, name: newName });
   }
 
   /**
@@ -33,21 +33,21 @@ export class Session {
    * @param attachment_path 消息的附件路径
    */
   public async add_message(role: string, text?: string, attachment_path?: string): Promise<Message> {
-    return await invoke<Message>('add_message', { session_id: this.id, role, text, attachment_path });
+    return await invoke<Message>("add_message", { sessionId: this.id, role, text, attachmentPath: attachment_path });
   }
 
   public static async create_session(name: string): Promise<Session> {
-    const sessionData = await invoke<Session>('create_session', { name });
+    const sessionData = await invoke<Session>("create_session", { name });
     return new Session(sessionData.id, sessionData.name);
   }
 
   public static async get_all_sessions(): Promise<Session[]> {
-    const sessionDataList = await invoke<Session[]>('get_all_sessions');
-    return sessionDataList.map(sessionData => new Session(sessionData.id, sessionData.name));
+    const sessionDataList = await invoke<Session[]>("get_all_sessions");
+    return sessionDataList.map((sessionData) => new Session(sessionData.id, sessionData.name));
   }
 
   public static async get_session(id: number): Promise<Session> {
-    const sessionData = await invoke<Session | null>('get_session', { id });
+    const sessionData = await invoke<Session | null>("get_session", { id });
     if (sessionData === null) {
       throw new Error(`Session with id ${id} not found`);
     }

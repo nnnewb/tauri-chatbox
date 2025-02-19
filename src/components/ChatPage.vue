@@ -7,6 +7,7 @@ const route = useRoute();
 const chatId = ref(route.params.id);
 const session = ref<Session | null>(null);
 const messages = ref<Message[]>([]);
+const messageInput = ref(""); // 用于存储输入框的内容
 
 onMounted(async () => {
   await fetchSession();
@@ -31,6 +32,21 @@ async function fetchSession() {
     }
   }
 }
+
+async function sendMessage() {
+  if (session.value && messageInput.value.trim()) {
+    const newMessage = await session.value.add_message("self", messageInput.value.trim());
+    messages.value.push(newMessage);
+    messageInput.value = ""; // 清空输入框
+  }
+}
+
+function handleKeyPress(event: KeyboardEvent) {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault(); // 阻止默认的换行行为
+    sendMessage();
+  }
+}
 </script>
 
 <template>
@@ -48,10 +64,15 @@ async function fetchSession() {
       </div>
     </div>
     <div class="chat-input-container">
-      <textarea class="chat-input" placeholder="Type your message here..."></textarea>
+      <textarea
+        class="chat-input"
+        placeholder="Type your message here..."
+        v-model="messageInput"
+        @keypress="handleKeyPress"
+      ></textarea>
     </div>
     <div class="chat-action">
-      <button class="send-button">Send</button>
+      <button class="send-button" @click="sendMessage">Send</button>
     </div>
   </div>
 </template>
