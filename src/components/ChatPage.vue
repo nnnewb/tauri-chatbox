@@ -3,14 +3,23 @@ import { useRoute, onBeforeRouteUpdate } from "vue-router";
 import { ref, onMounted } from "vue";
 import { Session, SessionRepository } from "../lib/session";
 import MyButton from "./MyButton.vue";
+import { Ollama } from "ollama/browser";
+import { useConfigStore } from "../stores/config";
+import { Message } from "../lib/message";
 
+// 当前会话信息
 const route = useRoute();
 const chatId = ref(route.params.id);
 const session = ref<Session | null>(null);
+const sessionRepository = SessionRepository.getInstance();
 const messages = ref<Message[]>([]);
+
+const receiving = ref("");
+const responding = ref(false);
 const messageInput = ref(""); // 用于存储输入框的内容
 
-const sessionRepository = SessionRepository.getInstance();
+const cfg = useConfigStore();
+const ollama = new Ollama({ host: cfg.base_url });
 
 onMounted(async () => {
   await fetchSession();
@@ -40,7 +49,21 @@ async function sendMessage() {
   if (session.value && messageInput.value.trim()) {
     const newMessage = await session.value.add_message("self", messageInput.value.trim());
     messages.value.push(newMessage);
-    messageInput.value = ""; // 清空输入框
+    const resp = await ollama.chat({
+      model: cfg.model_name,
+      messages: [{ role: "user", content: messageInput.value }],
+      stream: true,
+    });
+    responding.value = true;
+    for await (const part of resp) {
+      receiving.value += part.message.content;
+      console.log(`${part.message.role}: ${part.message.content}`);
+    }
+    const assistantMessage = await session.value.add_message("assistant", receiving.value);
+    messages.value.push(assistantMessage);
+    messageInput.value = "";
+    receiving.value = "";
+    responding.value = false;
   }
 }
 
@@ -71,10 +94,14 @@ function handleKeyPress(event: KeyboardEvent) {
         >
           {{ message.text }}
         </div>
+        <div v-if="responding" class="message other">
+          {{ receiving }}
+        </div>
       </div>
     </div>
     <div class="chat-input-container">
       <textarea
+        :disabled="responding"
         class="chat-input"
         placeholder="Type your message here..."
         v-model="messageInput"

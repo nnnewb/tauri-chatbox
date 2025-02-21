@@ -16,12 +16,6 @@ pub struct Message {
     pub attachment_path: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Config {
-    pub key: String,
-    pub value: String,
-}
-
 pub struct Database {
     pub conn: Connection,
 }
@@ -139,7 +133,6 @@ impl Database {
                  LEFT JOIN message_attachments ON messages.id=message_attachments.message_id
                  WHERE messages.session_id=?",
         )?;
-        // println!("sessionId is {}, stmt is {:#?}", session_id, stmt);
         let message_iter = stmt.query_map([session_id], |row| {
             Ok(Message {
                 id: row.get(0)?,
@@ -153,7 +146,6 @@ impl Database {
         for message_result in message_iter {
             messages.push(message_result?);
         }
-        // println!("{:?}", messages);
         Ok(messages)
     }
 
@@ -167,7 +159,7 @@ impl Database {
         Ok(())
     }
 
-    // 新增 config 表的初始化逻辑
+    // 初始化数据库
     fn init_database(conn: &Connection) -> Result<(), Error> {
         conn.execute(
             "CREATE TABLE IF NOT EXISTS sessions (
@@ -209,34 +201,6 @@ impl Database {
             [],
         )?;
         conn.execute("CREATE INDEX IF NOT EXISTS message_attachments_message_idx ON message_attachments (message_id)", [])?;
-        
-        // 新增 config 表的创建逻辑
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS config (
-                 key TEXT PRIMARY KEY,
-                 value TEXT NOT NULL
-            )",
-            [],
-        )?;
-        Ok(())
-    }
-
-    // 新增 get_config 方法
-    pub fn get_config(&self, key: &str) -> Result<Option<String>, Error> {
-        let mut stmt = self.conn.prepare("SELECT value FROM config WHERE key = ?")?;
-        let value = stmt.query_row([key], |row| row.get(0))?;
-        Ok(value)
-    }
-
-    // 新增 set_config 方法
-    pub fn set_config(&mut self, key: &str, value: &str) -> Result<(), Error> {
-        self.conn.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", params![key, value])?;
-        Ok(())
-    }
-
-    // 新增 delete_config 方法
-    pub fn delete_config(&mut self, key: &str) -> Result<(), Error> {
-        self.conn.execute("DELETE FROM config WHERE key = ?", [key])?;
         Ok(())
     }
 }

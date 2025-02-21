@@ -1,9 +1,10 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+mod config;
 mod session;
-use session::Database;
-use session::Message;
-use session::Session;
-use session::Config; // 新增 Config 导入
+use config::BackendConfig; // 确保导入 serde 库
+use session::{Database, Message, Session}; // 移除 Config 导入
+use std::fs;
+use std::path::Path;
 use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -23,9 +24,8 @@ pub fn run() {
             get_all_messages,
             get_session,
             clear_messages,
-            get_config, // 注册新的命令
-            set_config, // 注册新的命令
-            delete_config // 注册新的命令
+            load_config, // 注册新的命令
+            save_config  // 注册新的命令
         ])
         .manage(app_state)
         .run(tauri::generate_context!())
@@ -142,35 +142,25 @@ fn clear_messages(state: tauri::State<AppState>, session_id: i32) -> Result<(), 
         .map_err(|err| err.to_string())
 }
 
-// 新增 get_config 命令
+// 新增 load_config 命令
 #[tauri::command]
-fn get_config(state: tauri::State<AppState>, key: &str) -> Result<Option<String>, String> {
-    state
-        .db
-        .lock()
-        .unwrap()
-        .get_config(key)
-        .map_err(|err| err.to_string())
+fn load_config() -> Result<BackendConfig, String> {
+    let path = Path::new("config.json");
+    if !path.exists() {
+        return Ok(BackendConfig {
+            api_endpoint: String::new(),
+            model: String::new(),
+        });
+    }
+    let data = fs::read_to_string(path).map_err(|err| err.to_string())?;
+    serde_json::from_str(&data).map_err(|err| err.to_string())
 }
 
-// 新增 set_config 命令
+// 新增 save_config 命令
 #[tauri::command]
-fn set_config(state: tauri::State<AppState>, key: &str, value: &str) -> Result<(), String> {
-    state
-        .db
-        .lock()
-        .unwrap()
-        .set_config(key, value)
-        .map_err(|err| err.to_string())
-}
-
-// 新增 delete_config 命令
-#[tauri::command]
-fn delete_config(state: tauri::State<AppState>, key: &str) -> Result<(), String> {
-    state
-        .db
-        .lock()
-        .unwrap()
-        .delete_config(key)
-        .map_err(|err| err.to_string())
+fn save_config(config: BackendConfig) -> Result<(), String> {
+    let path = Path::new("config.json");
+    let data = serde_json::to_string_pretty(&config).map_err(|err| err.to_string())?;
+    fs::write(path, data).map_err(|err| err.to_string())?;
+    Ok(())
 }
